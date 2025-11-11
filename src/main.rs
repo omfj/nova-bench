@@ -1,5 +1,6 @@
 const NOVA_REPO_URL: &str = "https://github.com/trynova/nova";
-const NOVA_DIR: &str = "nova-builds";
+const NOVA_BUILD_DIR: &str = "nova-builds";
+const NOVA_GIT_DIR: &str = "nova";
 const BENCHMARKS_DIR: &str = "benchmarks";
 
 fn main() {
@@ -11,15 +12,16 @@ fn main() {
     }
 
     // Check if nova directory exists, if not clone it
-    if !std::path::Path::new("nova").exists() {
+    if !std::path::Path::new(NOVA_GIT_DIR).exists() {
         std::process::Command::new("git")
-            .args(&["clone", NOVA_REPO_URL])
+            .args(&["clone", NOVA_REPO_URL, NOVA_GIT_DIR])
             .status()
             .expect("Failed to clone Nova repository");
     }
 
-    if !std::path::Path::new(NOVA_DIR).exists() {
-        std::fs::create_dir(NOVA_DIR).expect("Failed to create nova dir");
+    // Check if nova-builds directory exists, if not create it
+    if !std::path::Path::new(NOVA_BUILD_DIR).exists() {
+        std::fs::create_dir(NOVA_BUILD_DIR).expect("Failed to create build nova dir");
     }
 
     let mut artifact_paths = Vec::new();
@@ -28,7 +30,7 @@ fn main() {
         // Build Nova
         std::process::Command::new("git")
             .args(&["checkout", commit])
-            .current_dir("nova")
+            .current_dir(NOVA_GIT_DIR)
             .status()
             .expect("Failed to checkout commit");
 
@@ -37,14 +39,15 @@ fn main() {
         // Buld the nova-cli binary
         std::process::Command::new("cargo")
             .args(&["build", "--release", "-p", "nova_cli"])
-            .current_dir("nova")
+            .current_dir(NOVA_GIT_DIR)
             .status()
             .expect("Failed to build Nova");
 
         // Move the build artifact to include the commit hash
-        let artifact_path = format!("{}/nova-{}", NOVA_DIR, commit);
+        let artifact_path = format!("{}/nova-{}", NOVA_BUILD_DIR, commit);
+        let nova_build_path = format!("{}/target/release/nova_cli", NOVA_GIT_DIR);
         std::process::Command::new("cp")
-            .args(&["nova/target/release/nova_cli", artifact_path.as_str()])
+            .args(&[nova_build_path.as_str(), artifact_path.as_str()])
             .status()
             .expect("Failed to copy Nova artifact");
 
