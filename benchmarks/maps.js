@@ -14,5 +14,14 @@ for (const map of maps) {
   times.push(end - start);
 }
 
+const best = times.reduce(
+  (a, b) => (a < b ? a : b),
+  BigInt(Number.MAX_SAFE_INTEGER)
+);
+print(`Best time to get size of Map: ${best} ns`);
+
 const avg = times.reduce((a, b) => a + b, 0n) / BigInt(times.length);
 print(`Average time to get size of Map: ${avg} ns`);
+
+const worst = times.reduce((a, b) => (a > b ? a : b), 0n);
+print(`Worst time to get size of Map: ${worst} ns`);
